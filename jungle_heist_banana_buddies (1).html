@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jungle Heist: Banana Buddies</title>
+    <!-- Tailwind CSS を読み込んでレイアウトを綺麗に整えます -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome アイコンライブラリ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0b130a;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        canvas {
+            image-rendering: pixelated;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-white font-sans overflow-x-hidden p-2 sm:p-4">
+
+    <!-- ヘッダータイトルエリア -->
+    <header class="text-center mb-2 w-full max-w-4xl px-4">
+        <h1 class="text-2xl sm:text-4xl font-extrabold text-amber-400 tracking-wide flex items-center justify-center gap-2 drop-shadow-md">
+            <span>🐵</span> JUNGLE HEIST: BANANA BUDDIES <span>🦧</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-emerald-300 font-medium">Co-op Stealth Platformer. Use vines, hide in bushes, and play the magical flute to soothe wild leopards!</p>
+    </header>
+
+    <!-- ゲームのメインフレームコンテナ -->
+    <div class="relative w-full max-w-4xl flex flex-col items-center bg-emerald-950/40 p-2 sm:p-4 rounded-2xl border-4 border-emerald-800/80 backdrop-blur-sm">
+        
+        <!-- 上部スコアボード / ステータス表示パネル -->
+        <div class="w-full flex justify-between items-center bg-emerald-900/80 px-3 py-2 rounded-xl mb-3 text-xs sm:text-sm font-semibold border border-emerald-700/50 flex-wrap gap-2">
+            <div class="flex items-center gap-4">
+                <span class="text-amber-300 flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-layer-group"></i> Level: <span id="level-display" class="text-white text-base">1</span>
+                </span>
+                <span class="text-yellow-300 flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-lemon text-amber-400 animate-bounce"></i> Bananas: <span id="bananas-display" class="text-white text-base">0/10</span>
+                </span>
+                <span class="text-sky-300 flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-music"></i> Awake Predators: <span id="leopards-display" class="text-white text-base">3</span>
+                </span>
+            </div>
+            
+            <div class="flex gap-4 items-center flex-wrap">
+                <!-- BGM音楽再生オンオフ切り替えボタン -->
+                <button id="btn-music-toggle" class="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-700 rounded text-xs flex items-center gap-1.5 transition active:scale-95 text-amber-300 border border-emerald-600/50">
+                    <i id="music-icon" class="fa-solid fa-volume-high text-amber-400 animate-pulse"></i> Music: On
+                </button>
+
+                <!-- プレイヤー1のステータス -->
+                <div class="flex items-center gap-1 border-r border-emerald-800 pr-3">
+                    <span class="text-sky-400 font-bold">P1 (Brown)</span>
+                    <span id="p1-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">Active</span>
+                </div>
+                <!-- プレイヤー2のステータス -->
+                <div class="flex items-center gap-1">
+                    <span class="text-orange-400 font-bold">P2 (Orange)</span>
+                    <span id="p2-status" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white">Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTML5 キャンバスコンテナ -->
+        <div class="relative w-full aspect-[16/9] bg-stone-950 rounded-lg overflow-hidden border-2 border-emerald-900">
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+            <!-- ゲーム画面オーバーレイ (スタート、ゲームオーバー、ステージクリア) -->
+            <!-- スタート案内オーバーレイ -->
+            <div id="start-screen" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-10">
+                <div class="max-w-md bg-emerald-900/90 p-6 rounded-2xl border-2 border-amber-400 shadow-2xl overflow-y-auto max-h-[90%] flex flex-col items-center">
+                    
+                    <!-- リポジトリ内の Fue Saru のアートをスタート画面に掲載 -->
+                    <div class="w-24 h-24 mb-3 rounded-full border-2 border-amber-400 overflow-hidden bg-emerald-950 flex items-center justify-center shadow-lg">
+                        <img id="intro-fue-saru-img" src="https://raw.githubusercontent.com/Goofball7705/materialsjp2026jam/main/music_fue_saru.png" alt="Fue Saru" class="w-20 h-20 object-contain" onerror="this.style.display='none';">
+                    </div>
+
+                    <h2 class="text-2xl sm:text-3xl font-black text-amber-400 mb-1">🌴 LULLABY CANOPY 🌴</h2>
+                    <p class="text-emerald-100 text-xs sm:text-sm mb-4">
+                        Two little monkey buddies are exploring the mystical heights. Climb still vines, grab swaying ropes to swing across gaps, and find the **Magical Flute (Fue)** to play sweet lullabies that put charging predators to sleep!
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-left text-xs mb-4 border-t border-b border-emerald-800 py-3 w-full">
+                        <div class="border-r border-emerald-800 pr-2 w-full">
+                            <h3 class="font-bold text-sky-400 mb-1 flex items-center gap-1">P1: Brown Monkey 🐒</h3>
+                            <p>🏃 <b>A / D</b>: Walk Left / Right</p>
+                            <p>🦘 <b>W</b>: Jump / Climb Still Vine</p>
+                            <p>🍃 <b>S</b>: Hide in Bush / Slide Down</p>
+                            <p>🎶 <b>F</b>: Play Magical Flute</p>
+                        </div>
+                        <div class="pl-2 w-full">
+                            <h3 class="font-bold text-orange-400 mb-1 flex items-center gap-1">P2: Orange Monkey 🦧</h3>
+                            <p>🏃 <b>J / L</b>: Walk Left / Right</p>
+                            <p>🦘 <b>I</b>: Jump / Climb Still Vine</p>
+                            <p>🍃 <b>K</b>: Hide in Bush / Slide Down</p>
+                            <p>🎶 <b>O</b>: Play Magical Flute</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/30 p-2.5 rounded-lg text-left text-[11px] text-amber-200 mb-4 space-y-1 w-full">
+                        <p>🌿 <b>Swaying Vines:</b> Jump onto the end of a swinging vine, ride the momentum, and press jump to launch across gaps!</p>
+                        <p>💤 <b>Soothe Predators:</b> Putting all leopards to sleep immediately unlocks the escape portal as an alternative to collecting bananas!</p>
+                        <p>🔄 <b>Co-Op Respawn:</b> Captured buddies respawn in 5 seconds. If both are caught, it's Game Over.</p>
+                    </div>
+
+                    <button id="start-btn" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-lg text-lg transition duration-200 shadow-md active:scale-95">
+                        Start Adventure
+                    </button>
+                </div>
+            </div>
+
+            <!-- ゲームオーバー画面 -->
+            <div id="game-over-screen" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-10 hidden">
+                <div class="max-w-md bg-red-950/90 p-8 rounded-2xl border-2 border-red-500 shadow-2xl">
+                    <span class="text-5xl">💀</span>
+                    <h2 class="text-3xl font-black text-red-500 mt-2 mb-2">BOTH BUDDIES CAUGHT!</h2>
+                    <p class="text-stone-300 text-sm mb-4">Neither monkey survived to help the other escape the forest predators.</p>
+                    <div class="bg-black/40 p-3 rounded-lg mb-4 text-xs">
+                        <p class="text-yellow-400">Level reached: <span id="game-over-level">1</span></p>
+                        <p class="text-amber-300">Total bananas collected: <span id="game-over-bananas">0</span></p>
+                    </div>
+                    <button id="retry-btn" class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-base transition duration-200 active:scale-95">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+
+            <!-- ステージクリア画面 -->
+            <div id="victory-screen" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-10 hidden">
+                <div class="max-w-md bg-emerald-900/90 p-8 rounded-2xl border-2 border-green-400 shadow-2xl">
+                    <span class="text-5xl">🎉</span>
+                    <h2 class="text-3xl font-black text-green-400 mt-2 mb-2">STAGE ESCAPED!</h2>
+                    <p id="victory-flavor" class="text-stone-300 text-sm mb-4">Both monkeys climbed safely into the higher canopy...</p>
+                    <button id="next-level-btn" class="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-stone-950 font-bold rounded-lg text-base transition duration-200 active:scale-95">
+                        Enter Next Level
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- タッチ操作パネル (モバイル端末およびタブレット向けに表示) -->
+        <div class="w-full mt-4 grid grid-cols-2 gap-4 lg:hidden">
+            <!-- プレイヤー1のモバイル用コントロール -->
+            <div class="bg-sky-950/60 p-2 sm:p-2.5 rounded-xl border border-sky-800 flex flex-col items-center">
+                <span class="text-[11px] font-bold text-sky-300 mb-1">Player 1 Mobile</span>
+                <div class="flex gap-1.5 items-center">
+                    <button id="btn-p1-left" class="w-9 h-9 bg-sky-800 active:bg-sky-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div class="flex flex-col gap-1">
+                        <button id="btn-p1-up" class="w-9 h-9 bg-sky-800 active:bg-sky-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button id="btn-p1-down" class="w-9 h-9 bg-sky-800 active:bg-sky-700 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">HIDE</button>
+                    </div>
+                    <button id="btn-p1-right" class="w-9 h-9 bg-sky-800 active:bg-sky-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-right"></i></button>
+                    <button id="btn-p1-fire" class="w-10 h-10 bg-sky-500 active:bg-sky-400 text-white rounded-full flex items-center justify-center ml-2 border-2 border-white text-xs font-bold shadow animate-pulse"><i class="fa-solid fa-music"></i></button>
+                </div>
+            </div>
+
+            <!-- プレイヤー2のモバイル用コントロール -->
+            <div class="bg-orange-950/60 p-2 sm:p-2.5 rounded-xl border border-orange-950 flex flex-col items-center">
+                <span class="text-[11px] font-bold text-orange-300 mb-1">Player 2 Mobile</span>
+                <div class="flex gap-1.5 items-center">
+                    <button id="btn-p2-left" class="w-9 h-9 bg-orange-800 active:bg-orange-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div class="flex flex-col gap-1">
+                        <button id="btn-p2-up" class="w-9 h-9 bg-orange-800 active:bg-orange-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button id="btn-p2-down" class="w-9 h-9 bg-orange-800 active:bg-orange-700 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">HIDE</button>
+                    </div>
+                    <button id="btn-p2-right" class="w-9 h-9 bg-orange-800 active:bg-orange-700 rounded-lg flex items-center justify-center text-white"><i class="fa-solid fa-arrow-right"></i></button>
+                    <button id="btn-p2-fire" class="w-10 h-10 bg-amber-500 active:bg-amber-400 text-white rounded-full flex items-center justify-center ml-2 border-2 border-white text-xs font-bold shadow animate-pulse"><i class="fa-solid fa-music"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- チュートリアル説明フッター -->
+    <footer class="mt-4 max-w-2xl text-center text-stone-400 text-xs px-4">
+        <p class="mb-1">💡 <b>Gameplay Mechanics:</b> Collect the Magical Fue Flute! Play to send soft lullaby notes toward charging predators. Soothing all leopards to sleep immediately activates the golden escape portal!</p>
+    </footer>
+
+    <!-- 音響効果およびBGM再生システム -->
+    <script>
+        // Web Audio Context (プレイヤー操作時に初期化してブラウザエラーを防ぎます)
+        let audioCtx = null;
+
+        // BGMオーディオオブジェクト
+        let bgMusic = null;
+        let isMusicMuted = false;
+
+        // AudioContextとBGM再生の安全な初期化
+        function initAudio() {
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.warn("AudioContext initialization postponed:", e);
+                }
+            }
+        }
+
+        // BGMの初期化および再生
+        function playBGM() {
+            initAudio();
+            if (!bgMusic) {
+                // リポジトリ内のBGM音源ファイルを直リンク（Raw URL）で読み込んで設定
+                bgMusic = new Audio("https://raw.githubusercontent.com/Goofball7705/materialsjp2026jam/main/Output%201-2.mp3");
+                bgMusic.loop = true;
+                bgMusic.volume = 0.35; // 音量はバックグラウンドにフィットするように設定
+            }
+            if (bgMusic && !isMusicMuted) {
+                bgMusic.play().catch(e => console.log("BGM playback postponed until user gesture:", e));
+            }
+        }
+
+        // BGMの一時停止
+        function pauseBGM() {
+            if (bgMusic) {
+                bgMusic.pause();
+            }
+        }
+
+        // シンセサイザーによる各種レトロ効果音再生
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'jump') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(480, now + 0.15);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'collect') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.setValueAtTime(780, now + 0.08);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'spot') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'lose') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.linearRampToValueAtTime(70, now + 0.6);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.start(now);
+                    osc.stop(now + 0.6);
+                } else if (type === 'win') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(330, now);
+                    osc.frequency.setValueAtTime(440, now + 0.1);
+                    osc.frequency.setValueAtTime(550, now + 0.2);
+                    osc.frequency.setValueAtTime(660, now + 0.3);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'hide') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(110, now);
+                    osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'caught') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.3);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'count') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'flute') {
+                    // 和風の柔らかいフルートの音色を模したサイン波(ピッチベンド付き)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'lullaby_hit') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.15);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'swing_grab') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch (e) {
+                console.log("Audio synthesis error: ", e);
+            }
+        }
+    </script>
+
+    <!-- メインゲームスクリプト -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // キャンバスの仮想解像度の設定 (16:9比率)
+        const V_WIDTH = 960;
+        const V_HEIGHT = 540;
+        canvas.width = V_WIDTH;
+        canvas.height = V_HEIGHT;
+
+        // 笛吹きサルのお猿さん画像をロード
+        const fluteImg = new Image();
+        fluteImg.crossOrigin = "anonymous";
+        // リポジトリ内のFue Saru画像のアドレスを設定
+        fluteImg.src = "https://raw.githubusercontent.com/Goofball7705/materialsjp2026jam/main/music_fue_saru.png";
+        
+        let isFluteImgLoaded = false;
+        fluteImg.onload = () => { isFluteImgLoaded = true; };
+        fluteImg.onerror = () => { isFluteImgLoaded = false; };
+
+        // HTML DOM 要素
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const victoryScreen = document.getElementById('victory-screen');
+        const startBtn = document.getElementById('start-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const levelDisplay = document.getElementById('level-display');
+        const bananasDisplay = document.getElementById('bananas-display');
+        const leopardsDisplay = document.getElementById('leopards-display');
+        const p1Status = document.getElementById('p1-status');
+        const p2Status = document.getElementById('p2-status');
+        const gameOverLevel = document.getElementById('game-over-level');
+        const gameOverBananas = document.getElementById('game-over-bananas');
+        const musicToggleBtn = document.getElementById('btn-music-toggle');
+        const musicIcon = document.getElementById('music-icon');
+
+        // ゲームステート管理
+        let currentLevel = 1;
+        let bananaCounter = 0;
+        let targetBananas = 8;
+        let gameRunning = false;
+        let gameState = 'START'; // START, RUNNING, GAMEOVER, LEVELCLEAR, COUNTDOWN
+        let countdownTimer = 0; // 開始前の321カウントダウン管理用フレーム
+
+        // 入力キーの管理マップ
+        const keys = {};
+
+        // タッチ操作のステート
+        const touchControls = {
+            p1: { left: false, right: false, up: false, down: false, fire: false },
+            p2: { left: false, right: false, up: false, down: false, fire: false }
+        };
+
+        // 静止ツタクラス (上下クライミング可能)
+        class StillVine {
+            constructor(x, y, height) {
+                this.x = x;
+                this.y = y;
+                this.width = 12;
+                this.height = height;
+            }
+
+            draw() {
+                ctx.save();
+                // ツタの中心軸を描画
+                ctx.strokeStyle = '#15803d';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 6, this.y);
+                ctx.lineTo(this.x + 6, this.y + this.height);
+                ctx.stroke();
+
+                // 垂れ下がる緑の葉っぱ
+                ctx.fillStyle = '#22c55e';
+                let segmentSize = 25;
+                for (let yy = this.y + 10; yy < this.y + this.height; yy += segmentSize) {
+                    ctx.beginPath();
+                    ctx.ellipse(this.x + 1, yy, 6, 4, -0.4, 0, Math.PI * 2);
+                    ctx.ellipse(this.x + 11, yy + 5, 6, 4, 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // 揺れるツタクラス (ドンキーコング風にスイング可能)
+        class SwayingVine {
+            constructor(startX, startY, length) {
+                this.startX = startX;
+                this.startY = startY;
+                this.length = length;
+                this.angle = 0;
+                this.maxAngle = 0.55; // 揺れの振幅
+                this.speed = 0.035;   // 揺れのスピード
+                this.timeOffset = Math.random() * 100;
+            }
+
+            update(tick) {
+                this.angle = this.maxAngle * Math.sin((tick * this.speed) + this.timeOffset);
+            }
+
+            getTipPos() {
+                return {
+                    x: this.startX + Math.sin(this.angle) * this.length,
+                    y: this.startY + Math.cos(this.angle) * this.length
+                };
+            }
+
+            draw() {
+                ctx.save();
+                let tip = this.getTipPos();
+
+                // 頑丈なロープラインを描画
+                ctx.strokeStyle = '#854d0e';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(this.startX, this.startY);
+                ctx.lineTo(tip.x, tip.y);
+                ctx.stroke();
+
+                // ロープの結び目デコレーション
+                ctx.fillStyle = '#fef08a';
+                let steps = 6;
+                for (let i = 1; i <= steps; i++) {
+                    let ratio = i / steps;
+                    let kx = this.startX + Math.sin(this.angle) * this.length * ratio;
+                    let ky = this.startY + Math.cos(this.angle) * this.length * ratio;
+                    ctx.beginPath();
+                    ctx.arc(kx, ky, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 頂点の草のキャップ
+                ctx.fillStyle = '#16a34a';
+                ctx.beginPath();
+                ctx.arc(this.startX, this.startY, 8, 0, Math.PI*2);
+                ctx.fill();
+
+                // 底部の丸いタッセル
+                ctx.fillStyle = '#a16207';
+                ctx.beginPath();
+                ctx.arc(tip.x, tip.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // 魔法の和笛パワーアップアイテムクラス
+        class FluteItem {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 32;
+                this.height = 32;
+                this.collected = false;
+                this.hoverOffset = Math.random() * Math.PI;
+            }
+
+            update() {
+                this.hoverOffset += 0.05;
+            }
+
+            draw() {
+                if (this.collected) return;
+                ctx.save();
+                let hoverY = this.y + Math.sin(this.hoverOffset) * 4;
+
+                // 魔法の輝き
+                let radialGrad = ctx.createRadialGradient(this.x + 16, hoverY + 16, 2, this.x + 16, hoverY + 16, 18);
+                radialGrad.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
+                radialGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                ctx.fillStyle = radialGrad;
+                ctx.beginPath();
+                ctx.arc(this.x + 16, hoverY + 16, 18, 0, Math.PI*2);
+                ctx.fill();
+
+                // 笛のベクター描画
+                ctx.strokeStyle = '#ca8a04';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 4, hoverY + 28);
+                ctx.lineTo(this.x + 28, hoverY + 4);
+                ctx.stroke();
+
+                // 音孔
+                ctx.fillStyle = '#451a03';
+                for (let i = 0; i < 4; i++) {
+                    let ratio = 0.3 + (i * 0.15);
+                    let hx = this.x + 4 + (24 * ratio);
+                    let hy = hoverY + 28 - (24 * ratio);
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // 音符エフェクト弾クラス (Jaguarsを眠らせる)
+        class MusicNote {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = 5;
+                this.life = 50; 
+                this.active = true;
+                this.symbol = Math.random() > 0.5 ? '♪' : '♫';
+                this.color = `hsl(${Math.random() * 60 + 180}, 90%, 65%)`; // 綺麗な魔法の青色
+            }
+
+            update(platforms) {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+
+                if (this.life <= 0) {
+                    this.active = false;
+                }
+
+                // 地形プラットフォームに衝突したら消滅
+                for (let plat of platforms) {
+                    if (this.x > plat.x && this.x < plat.x + plat.width &&
+                        this.y > plat.y && this.y < plat.y + plat.height) {
+                        this.active = false;
+                        break;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.fillStyle = this.color;
+                ctx.font = 'bold 15px sans-serif';
+                ctx.fillText(this.symbol, this.x - 4, this.y + 4);
+                ctx.restore();
+            }
+        }
+
+        // お猿のプレイヤークラス (P1/P2共通)
+        class Player {
+            constructor(id, x, y, color, label, controls) {
+                this.id = id;
+                this.startX = x;
+                this.startY = y;
+                this.x = x;
+                this.y = y;
+                this.width = 28;
+                this.height = 36;
+                this.color = color;
+                this.label = label;
+                this.controls = controls;
+
+                // 物理演算用変数
+                this.vx = 0;
+                this.vy = 0;
+                this.speed = 4.2;
+                this.jumpForce = -13; 
+                this.gravity = 0.55;
+                this.isGrounded = false;
+
+                // 登攀状態
+                this.climbingVine = null;
+                this.attachedSwayingVine = null;
+
+                // 魔法のフルートのステータス
+                this.hasFlute = false;
+                this.fluteAmmo = 0;
+                this.fluteCooldown = 0;
+
+                // ステルスおよび死亡/復活ステート
+                this.isHiding = false;
+                this.wasHidingLastFrame = false;
+                this.facingRight = (id === 1);
+                this.isDead = false;
+                this.respawnTimer = 0; 
+
+                // アニメーション関連
+                this.animFrame = 0;
+                this.animTime = 0;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.vx = 0;
+                this.vy = 0;
+                this.isHiding = false;
+                this.isGrounded = false;
+                this.isDead = false;
+                this.respawnTimer = 0;
+                this.climbingVine = null;
+                this.attachedSwayingVine = null;
+                this.hasFlute = false;
+                this.fluteAmmo = 0;
+                this.fluteCooldown = 0;
+            }
+
+            update(platforms, bushes, stillVines, swayingVines) {
+                if (this.fluteCooldown > 0) this.fluteCooldown--;
+
+                // 死亡状態の場合、5秒(300フレーム)のカウントダウンと自動復帰
+                if (this.isDead) {
+                    if (this.respawnTimer > 0) {
+                        this.respawnTimer--;
+                    } else {
+                        // 自動でセーフスポットに復活します
+                        this.reset();
+                    }
+                    return; 
+                }
+
+                // タッチ入力の対応
+                const tc = (this.id === 1) ? touchControls.p1 : touchControls.p2;
+
+                let moveLeft = keys[this.controls.left] || tc.left;
+                let moveRight = keys[this.controls.right] || tc.right;
+                let moveUp = keys[this.controls.up] || tc.up;
+                let moveDown = keys[this.controls.down] || tc.down;
+                let playPressed = keys[this.controls.fire] || tc.fire;
+
+                // 魔法の笛を吹く
+                if (this.hasFlute && this.fluteAmmo > 0 && playPressed && this.fluteCooldown === 0) {
+                    this.playFluteLullaby();
+                    this.fluteCooldown = 25; 
+                    keys[this.controls.fire] = false;
+                    tc.fire = false;
+                }
+
+                // 揺れるツタに掴まっている状態の移動
+                if (this.attachedSwayingVine) {
+                    let tip = this.attachedSwayingVine.getTipPos();
+                    this.x = tip.x - this.width / 2;
+                    this.y = tip.y - this.height + 8;
+                    this.vx = 0;
+                    this.vy = 0;
+
+                    // ジャンプ/リリースして飛び出す
+                    if (moveUp) {
+                        let launchVX = Math.sin(this.attachedSwayingVine.angle) * 14;
+                        if (Math.abs(launchVX) < 2) launchVX = this.facingRight ? 5 : -5;
+
+                        this.vx = launchVX;
+                        this.vy = this.jumpForce;
+                        this.attachedSwayingVine = null;
+                        this.isGrounded = false;
+                        playSound('jump');
+                    }
+                    return;
+                }
+
+                // 揺れるツタに空中から掴まる処理
+                if (!this.attachedSwayingVine && this.vy > 0) {
+                    for (let sv of swayingVines) {
+                        let tip = sv.getTipPos();
+                        let dx = (this.x + this.width/2) - tip.x;
+                        let dy = (this.y + this.height - 10) - tip.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 26) {
+                            this.attachedSwayingVine = sv;
+                            this.climbingVine = null;
+                            playSound('swing_grab');
+                            return;
+                        }
+                    }
+                }
+
+                this.isHiding = false;
+
+                // 茂みのステルス判定
+                let insideBush = false;
+                for (let bush of bushes) {
+                    if (this.x + this.width/2 > bush.x && this.x + this.width/2 < bush.x + bush.width &&
+                        this.y + this.height > bush.y && this.y < bush.y + bush.height) {
+                        insideBush = true;
+                        break;
+                    }
+                }
+
+                if (insideBush && moveDown && !this.climbingVine) {
+                    this.isHiding = true;
+                    if (!this.wasHidingLastFrame) {
+                        playSound('hide');
+                    }
+                }
+                this.wasHidingLastFrame = this.isHiding;
+
+                // 静止ツタクライミング挙動
+                if (this.climbingVine) {
+                    this.vx = 0;
+                    this.vy = 0;
+
+                    if (moveUp) {
+                        this.y -= 3.5;
+                    } else if (moveDown) {
+                        this.y += 3.5;
+                    }
+
+                    // 左右キーでツタから降りる
+                    if (moveLeft || moveRight) {
+                        this.climbingVine = null;
+                    }
+
+                    // ガードコード：ツタがnullでないことを確認してからアクセス
+                    if (this.climbingVine) {
+                        this.x = this.climbingVine.x + 6 - this.width/2;
+
+                        if (this.y < this.climbingVine.y - 12 || this.y > this.climbingVine.y + this.climbingVine.height - 10) {
+                            this.climbingVine = null;
+                        }
+                    }
+                } else {
+                    // ツタへの捕まり判定
+                    if (moveUp) {
+                        for (let vine of stillVines) {
+                            if (this.x + this.width/2 > vine.x - 10 && this.x + this.width/2 < vine.x + vine.width + 10 &&
+                                this.y + this.height > vine.y && this.y < vine.y + vine.height) {
+                                this.climbingVine = vine;
+                                this.vy = 0;
+                                this.vx = 0;
+                                break;
+                            }
+                        }
+                    }
+
+                    // 通常の横移動
+                    if (this.isHiding) {
+                        this.vx = 0;
+                    } else {
+                        if (moveLeft) {
+                            this.vx = -this.speed;
+                            this.facingRight = false;
+                        } else if (moveRight) {
+                            this.vx = this.speed;
+                            this.facingRight = true;
+                        } else {
+                            this.vx *= 0.75; 
+                            if (Math.abs(this.vx) < 0.1) this.vx = 0;
+                        }
+
+                        // ジャンプ入力
+                        if (moveUp && this.isGrounded) {
+                            this.vy = this.jumpForce;
+                            this.isGrounded = false;
+                            playSound('jump');
+                        }
+                    }
+
+                    // 重力処理
+                    this.vy += this.gravity;
+                    if (this.vy > 12) this.vy = 12;
+
+                    this.x += this.vx;
+                    this.handleHorizontalCollisions(platforms);
+
+                    this.y += this.vy;
+                    this.handleVerticalCollisions(platforms);
+                }
+
+                // 落下によるリセット
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > V_WIDTH) this.x = V_WIDTH - this.width;
+                if (this.y > V_HEIGHT + 100) {
+                    this.isDead = true;
+                    this.respawnTimer = 300; 
+                    playSound('caught');
+                }
+
+                // アニメーションフレーム更新
+                this.animTime += 1;
+                if (Math.abs(this.vx) > 0.5 && this.isGrounded) {
+                    if (this.animTime % 8 === 0) {
+                        this.animFrame = (this.animFrame + 1) % 4;
+                    }
+                } else {
+                    this.animFrame = 0;
+                }
+            }
+
+            handleHorizontalCollisions(platforms) {
+                for (let plat of platforms) {
+                    if (this.x < plat.x + plat.width &&
+                        this.x + this.width > plat.x &&
+                        this.y < plat.y + plat.height &&
+                        this.y + this.height > plat.y) {
+                        
+                        if (this.vx > 0) { 
+                            this.x = plat.x - this.width;
+                        } else if (this.vx < 0) { 
+                            this.x = plat.x + plat.width;
+                        }
+                        this.vx = 0;
+                    }
+                }
+            }
+
+            handleVerticalCollisions(platforms) {
+                for (let plat of platforms) {
+                    if (this.x < plat.x + plat.width &&
+                        this.x + this.width > plat.x &&
+                        this.y < plat.y + plat.height &&
+                        this.y + this.height > plat.y) {
+                        
+                        if (this.vy > 0) { 
+                            this.y = plat.y - this.height;
+                            this.isGrounded = true;
+                            this.vy = 0;
+                        } else if (this.vy < 0) { 
+                            this.y = plat.y + plat.height;
+                            this.vy = 0;
+                        }
+                    }
+                }
+            }
+
+            playFluteLullaby() {
+                playSound('flute');
+                this.fluteAmmo--;
+
+                // 音符を発射して周囲を包み込む
+                let px = this.facingRight ? this.x + this.width : this.x;
+                let py = this.y + 12;
+                let baseAngle = this.facingRight ? 0 : Math.PI;
+
+                for (let i = -1; i <= 1; i++) {
+                    let spreadAngle = baseAngle + (i * 0.15);
+                    let speed = 9.0;
+                    let vx = Math.cos(spreadAngle) * speed;
+                    let vy = Math.sin(spreadAngle) * speed;
+                    musicNotes.push(new MusicNote(px, py, vx, vy));
+                }
+
+                if (this.fluteAmmo <= 0) {
+                    this.hasFlute = false;
+                }
+            }
+
+            draw() {
+                // お化け状態でふわふわ漂う復活待ち時の描画
+                if (this.isDead) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.5;
+                    
+                    let bounceY = this.startY + Math.sin(this.animTime * 0.05) * 6;
+                    
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                    ctx.beginPath();
+                    ctx.arc(this.startX + this.width/2, bounceY + 12, 18, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 天使の輪
+                    ctx.strokeStyle = "#fef08a";
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.ellipse(this.startX + this.width/2, bounceY - 4, 10, 3, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.startX + this.width / 2, bounceY + 12, 11, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = "rgba(186, 230, 253, 0.7)";
+                    ctx.beginPath();
+                    ctx.moveTo(this.startX + 2, bounceY + 18);
+                    ctx.lineTo(this.startX + this.width - 2, bounceY + 18);
+                    ctx.lineTo(this.startX + this.width, bounceY + 36);
+                    ctx.quadraticCurveTo(this.startX + this.width - 5, bounceY + 40, this.startX + this.width - 10, bounceY + 36);
+                    ctx.quadraticCurveTo(this.startX + this.width/2, bounceY + 42, this.startX + 10, bounceY + 36);
+                    ctx.quadraticCurveTo(this.startX + 5, bounceY + 40, this.startX + 2, bounceY + 36);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(this.startX + this.width / 2 - 3, bounceY + 11, 2, 0, Math.PI * 2);
+                    ctx.arc(this.startX + this.width / 2 + 3, bounceY + 11, 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = "#38bdf8";
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.textAlign = "center";
+                    let sec = (this.respawnTimer / 60).toFixed(1);
+                    ctx.fillText(`RESPAWN: ${sec}s`, this.startX + this.width / 2, bounceY + 50);
+
+                    ctx.restore();
+                    return;
+                }
+
+                ctx.save();
+
+                if (this.isHiding) {
+                    ctx.globalAlpha = 0.55;
+                }
+
+                // 影
+                ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+                ctx.fillRect(this.x + 2, this.y + this.height - 4, this.width - 4, 6);
+
+                ctx.fillStyle = this.color;
+                
+                // 頭
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + 12, 11, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 耳
+                ctx.fillStyle = "#e5c1a7";
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2 - 11, this.y + 10, 4, 0, Math.PI*2);
+                ctx.arc(this.x + this.width / 2 + 11, this.y + 10, 4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2 - 11, this.y + 10, 2.5, 0, Math.PI*2);
+                ctx.arc(this.x + this.width / 2 + 11, this.y + 10, 2.5, 0, Math.PI*2);
+                ctx.fill();
+
+                // 顔
+                ctx.fillStyle = "#f3d0b7";
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + 13, 7.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 目
+                ctx.fillStyle = "#3c2a1e";
+                let eyeOffset = this.facingRight ? 2 : -2;
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2 + eyeOffset - 3, this.y + 11, 1.8, 0, Math.PI * 2);
+                ctx.arc(this.x + this.width / 2 + eyeOffset + 3, this.y + 11, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 口元
+                ctx.strokeStyle = "#3c2a1e";
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2 + eyeOffset / 2, this.y + 15, 3, 0, Math.PI);
+                ctx.stroke();
+
+                // 体
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.roundRect(this.x + 3, this.y + 20, this.width - 6, 14, 5);
+                ctx.fill();
+
+                // お腹
+                ctx.fillStyle = "#f3d0b7";
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + 27, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 足
+                ctx.fillStyle = this.color;
+                let legY = this.y + 34;
+                if (this.attachedSwayingVine) {
+                    ctx.fillRect(this.x + 1, legY - 3, 6, 4);
+                    ctx.fillRect(this.x + this.width - 7, legY - 3, 6, 4);
+                } else if (!this.isGrounded && !this.climbingVine) {
+                    ctx.fillRect(this.x + 2, legY, 5, 4);
+                    ctx.fillRect(this.x + this.width - 7, legY, 5, 4);
+                } else if (Math.abs(this.vx) > 0.5) {
+                    let runOffset = Math.sin(this.animFrame * Math.PI/2) * 3;
+                    ctx.fillRect(this.x + 4, legY + (runOffset > 0 ? -1 : 1), 6, 4);
+                    ctx.fillRect(this.x + this.width - 10, legY + (runOffset <= 0 ? -1 : 1), 6, 4);
+                } else {
+                    ctx.fillRect(this.x + 4, legY, 6, 4);
+                    ctx.fillRect(this.x + this.width - 10, legY, 6, 4);
+                }
+
+                // 尻尾
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                if (this.facingRight) {
+                    ctx.moveTo(this.x + 5, this.y + 26);
+                    ctx.bezierCurveTo(this.x - 8, this.y + 20, this.x - 4, this.y + 10, this.x - 2, this.y + 14);
+                } else {
+                    ctx.moveTo(this.x + this.width - 5, this.y + 26);
+                    ctx.bezierCurveTo(this.x + this.width + 8, this.y + 20, this.x + this.width + 4, this.y + 10, this.x + this.width + 2, this.y + 14);
+                }
+                ctx.stroke();
+
+                // 笛を手に持たせるビジュアル表現
+                if (this.hasFlute) {
+                    ctx.save();
+                    let fX = this.facingRight ? this.x + 12 : this.x - 8;
+                    let fY = this.y + 18;
+                    ctx.strokeStyle = '#ca8a04';
+                    ctx.lineWidth = 3.5;
+                    ctx.beginPath();
+                    if (this.facingRight) {
+                        ctx.moveTo(fX, fY + 6);
+                        ctx.lineTo(fX + 16, fY);
+                    } else {
+                        ctx.moveTo(fX + 16, fY + 6);
+                        ctx.lineTo(fX, fY);
+                    }
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.font = 'bold 8px Arial';
+                    ctx.fillText(`♪ ${this.fluteAmmo}`, this.x + this.width/2, this.y - 14);
+                    ctx.restore();
+                }
+
+                // ラベル指示
+                ctx.fillStyle = this.color;
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(this.label, this.x + this.width/2, this.y - 4);
+
+                if (this.isHiding) {
+                    ctx.fillStyle = "#22c55e";
+                    ctx.fillText("🍃 Hidden", this.x + this.width/2, this.y - 14);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // 敵ヒョウ (Leopard) クラス
+        class Enemy {
+            constructor(startX, startY, patrolDist, baseSpeed) {
+                this.startX = startX;
+                this.startY = startY;
+                this.x = startX;
+                this.y = startY;
+                this.width = 44;
+                this.height = 28;
+                this.patrolDist = patrolDist;
+
+                this.facingRight = true;
+                this.baseSpeed = baseSpeed;
+                this.currentSpeed = baseSpeed;
+
+                // 物理演算
+                this.vy = 0;
+                this.gravity = 0.55;
+                this.isGrounded = false;
+
+                // 睡眠ステート
+                this.sleepValue = 0; 
+                this.targetSleep = 2; 
+                this.isSleeping = false;
+                this.flashTime = 0; 
+
+                // AIステート
+                this.state = 'PATROL'; 
+                this.chargeTarget = null; 
+                this.lostTime = 0; 
+
+                this.alarmTriggered = false;
+                this.walkCycle = 0;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.vy = 0;
+                this.facingRight = true;
+                this.state = 'PATROL';
+                this.chargeTarget = null;
+                this.currentSpeed = this.baseSpeed;
+                this.alarmTriggered = false;
+                this.sleepValue = 0;
+                this.isSleeping = false;
+                this.flashTime = 0;
+            }
+
+            update(players, platforms, bushes) {
+                if (this.isSleeping) return; 
+
+                if (this.flashTime > 0) this.flashTime--;
+
+                this.walkCycle += 0.15;
+
+                this.vy += this.gravity;
+                if (this.vy > 12) this.vy = 12;
+
+                // 視界チェック
+                let spottedPlayer = null;
+
+                for (let player of players) {
+                    if (!player.isHiding && !player.isDead) {
+                        let dx = (player.x + player.width/2) - (this.x + this.width/2);
+                        let dy = (player.y + player.height/2) - (this.y + this.height/2);
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if (dist < 320) {
+                            let relativeAngleMatch = false;
+                            if (this.facingRight && dx > -20) relativeAngleMatch = true;
+                            if (!this.facingRight && dx < 20) relativeAngleMatch = true;
+
+                            if (relativeAngleMatch && Math.abs(dy) < 80) {
+                                let pathBlocked = false;
+                                for (let plat of platforms) {
+                                    let midX = (this.x + player.x) / 2;
+                                    let midY = (this.y + player.y) / 2;
+                                    if (midX > plat.x && midX < plat.x + plat.width &&
+                                        midY > plat.y && midY < plat.y + plat.height) {
+                                        pathBlocked = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!pathBlocked) {
+                                    spottedPlayer = player;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // AI状態遷移
+                if (spottedPlayer) {
+                    if (this.state !== 'CHARGING') {
+                        playSound('spot');
+                        this.state = 'CHARGING';
+                    }
+                    this.chargeTarget = spottedPlayer;
+                    this.lostTime = 0;
+                } else if (this.state === 'CHARGING') {
+                    if (this.chargeTarget && (this.chargeTarget.isDead || this.chargeTarget.isHiding)) {
+                        this.chargeTarget = null;
+                    }
+
+                    this.lostTime += 1;
+                    if (this.lostTime > 120 || !this.chargeTarget) { 
+                        this.state = 'PATROL';
+                        this.chargeTarget = null;
+                        this.currentSpeed = this.baseSpeed;
+                    }
+                }
+
+                // 状態に応じた速度調整
+                if (this.state === 'CHARGING' && this.chargeTarget) {
+                    let dx = this.chargeTarget.x - this.x;
+                    this.facingRight = (dx > 0);
+                    this.currentSpeed = this.baseSpeed * 2.2;
+                    this.x += this.facingRight ? this.currentSpeed : -this.currentSpeed;
+                } else {
+                    this.currentSpeed = this.baseSpeed;
+                    let targetX = this.x;
+                    if (this.facingRight) {
+                        targetX += this.currentSpeed;
+                        if (targetX > this.startX + this.patrolDist) {
+                            this.facingRight = false;
+                        }
+                    } else {
+                        targetX -= this.currentSpeed;
+                        if (targetX < this.startX) {
+                            this.facingRight = true;
+                        }
+                    }
+                    this.x = targetX;
+                }
+
+                this.y += this.vy;
+
+                // 地形衝突判定
+                this.isGrounded = false;
+                for (let plat of platforms) {
+                    if (this.x < plat.x + plat.width &&
+                        this.x + this.width > plat.x &&
+                        this.y < plat.y + plat.height &&
+                        this.y + this.height > plat.y) {
+                        
+                        if (this.vy > 0) { 
+                            this.y = plat.y - this.height;
+                            this.vy = 0;
+                            this.isGrounded = true;
+                        }
+                    }
+                }
+
+                if (this.y > V_HEIGHT + 100) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.save();
+
+                if (this.flashTime > 0 && this.flashTime % 4 < 2) {
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 12;
+                }
+
+                if (!this.isSleeping) {
+                    this.drawVisionCone();
+                }
+
+                // シャドウ
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                ctx.fillRect(this.x + 4, this.y + this.height - 3, this.width - 8, 4);
+
+                // 体色設定
+                if (this.isSleeping) {
+                    ctx.fillStyle = '#475569'; 
+                } else if (this.sleepValue > 0) {
+                    ctx.fillStyle = '#da65a1'; 
+                } else {
+                    ctx.fillStyle = '#da4343'; 
+                }
+                
+                ctx.beginPath();
+                ctx.roundRect(this.x + 4, this.y + 6, this.width - 8, 16, 4);
+                ctx.fill();
+
+                // ヒョウの斑点
+                ctx.fillStyle = '#4c0e0e';
+                ctx.fillRect(this.x + 10, this.y + 9, 3, 3);
+                ctx.fillRect(this.x + 22, this.y + 11, 4, 3);
+                ctx.fillRect(this.x + 16, this.y + 15, 3, 3);
+                ctx.fillRect(this.x + 28, this.y + 9, 3, 3);
+
+                // 頭部
+                if (this.isSleeping) {
+                    ctx.fillStyle = '#475569';
+                } else if (this.sleepValue > 0) {
+                    ctx.fillStyle = '#da65a1';
+                } else {
+                    ctx.fillStyle = '#da4343';
+                }
+                let headX = this.facingRight ? this.x + this.width - 12 : this.x;
+                ctx.beginPath();
+                ctx.arc(headX + 6, this.y + 6, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 耳
+                ctx.beginPath();
+                ctx.arc(headX + 2, this.y - 1, 3.5, 0, Math.PI * 2);
+                ctx.arc(headX + 10, this.y - 1, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 睡眠・覚醒の目
+                if (this.isSleeping) {
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.arc(headX + 3, this.y + 4, 2, 0, Math.PI);
+                    ctx.arc(headX + 9, this.y + 4, 2, 0, Math.PI);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = (this.state === 'CHARGING') ? '#ff1e1e' : '#ffea00';
+                    let eyeOffset = this.facingRight ? 4 : -2;
+                    ctx.beginPath();
+                    ctx.arc(headX + 4 + eyeOffset, this.y + 4, 2, 0, Math.PI * 2);
+                    ctx.arc(headX + 8 + eyeOffset, this.y + 4, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 鼻先
+                ctx.fillStyle = '#fbb6b6';
+                ctx.beginPath();
+                ctx.arc(headX + 6 + (this.facingRight ? 2 : -2), this.y + 8, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (!this.isSleeping) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(headX + 4 + (this.facingRight ? 2 : -2), this.y + 8);
+                    ctx.lineTo(headX + 5 + (this.facingRight ? 2 : -2), this.y + 12);
+                    ctx.lineTo(headX + 6 + (this.facingRight ? 2 : -2), this.y + 8);
+                    ctx.fill();
+                }
+
+                // 足のアニメーション
+                if (this.isSleeping) {
+                    ctx.fillRect(this.x + 8, this.y + 20, 6, 4);
+                    ctx.fillRect(this.x + 18, this.y + 20, 6, 4);
+                    ctx.fillRect(this.x + 28, this.y + 20, 6, 4);
+                } else {
+                    ctx.fillStyle = (this.sleepValue > 0) ? '#da65a1' : '#da4343';
+                    let legSwing = Math.sin(this.walkCycle) * 6;
+                    ctx.fillRect(this.x + 8, this.y + 20, 5, 8 + legSwing);
+                    ctx.fillRect(this.x + 18, this.y + 20, 5, 8 - legSwing);
+                    ctx.fillRect(this.x + 26, this.y + 20, 5, 8 + legSwing);
+                    ctx.fillRect(this.x + 34, this.y + 20, 5, 8 - legSwing);
+                }
+
+                // 尻尾
+                ctx.strokeStyle = this.isSleeping ? '#475569' : (this.sleepValue > 0 ? '#da65a1' : '#da4343');
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                let tailX = this.facingRight ? this.x + 4 : this.x + this.width - 4;
+                ctx.moveTo(tailX, this.y + 10);
+                if (this.facingRight) {
+                    ctx.quadraticCurveTo(this.x - 12, this.y - 2 + Math.sin(this.walkCycle)*4, this.x - 4, this.y + 14);
+                } else {
+                    ctx.quadraticCurveTo(this.x + this.width + 12, this.y - 2 + Math.sin(this.walkCycle)*4, this.x + this.width + 4, this.y + 14);
+                }
+                ctx.stroke();
+
+                if (this.isSleeping) {
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.font = 'bold 11px sans-serif';
+                    let zOffset = Math.sin(this.walkCycle * 0.4) * 3;
+                    ctx.fillText('💤 Z z z', this.x + this.width/2 - 12 + zOffset, this.y - 8);
+                } else if (this.state === 'CHARGING') {
+                    ctx.fillStyle = '#ff1111';
+                    ctx.font = 'black 16px sans-serif';
+                    ctx.fillText('⚡ ALERT', this.x + this.width/2 - 16, this.y - 12);
+                }
+
+                ctx.restore();
+            }
+
+            drawVisionCone() {
+                ctx.save();
+                let vRange = 280;
+                let startAngle = this.facingRight ? -0.15 : Math.PI - 0.15;
+                let endAngle = this.facingRight ? 0.15 : Math.PI + 0.15;
+
+                let gradient = ctx.createRadialGradient(
+                    this.x + this.width/2, this.y + 8, 10,
+                    this.x + this.width/2 + (this.facingRight ? vRange : -vRange), this.y + 8, vRange
+                );
+
+                if (this.state === 'CHARGING') {
+                    gradient.addColorStop(0, 'rgba(255, 30, 30, 0.4)');
+                    gradient.addColorStop(1, 'rgba(255, 0, 0, 0.0)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(254, 240, 138, 0.2)');
+                    gradient.addColorStop(1, 'rgba(254, 240, 138, 0.0)');
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width/2, this.y + 8);
+                ctx.arc(this.x + this.width/2, this.y + 8, vRange, startAngle, endAngle, false);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // コレクタブルアイテム
+        class Item {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.hoverOffset = Math.random() * Math.PI * 2;
+                this.collected = false;
+            }
+
+            update() {
+                this.hoverOffset += 0.05;
+            }
+
+            draw() {
+                if (this.collected) return;
+                
+                ctx.save();
+                let hoverY = this.y + Math.sin(this.hoverOffset) * 4;
+
+                let radialGrad = ctx.createRadialGradient(this.x + 10, hoverY + 10, 2, this.x + 10, hoverY + 10, 14);
+                radialGrad.addColorStop(0, 'rgba(253, 224, 71, 0.6)');
+                radialGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                ctx.fillStyle = radialGrad;
+                ctx.beginPath();
+                ctx.arc(this.x + 10, hoverY + 10, 14, 0, Math.PI*2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#854d0e'; 
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(this.x + 10, hoverY + 2);
+                ctx.lineTo(this.x + 12, hoverY + 7);
+                ctx.stroke();
+
+                ctx.fillStyle = '#facc15'; 
+                ctx.beginPath();
+                ctx.arc(this.x + 12, hoverY + 12, 6, Math.PI * 0.1, Math.PI * 0.9, false);
+                ctx.quadraticCurveTo(this.x + 12, hoverY + 17, this.x + 17, hoverY + 11);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#eab308';
+                ctx.beginPath();
+                ctx.arc(this.x + 7, hoverY + 11, 6, Math.PI * 0.1, Math.PI * 0.9, false);
+                ctx.quadraticCurveTo(this.x + 7, hoverY + 16, this.x + 12, hoverY + 10);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // コの字型茂み
+        class Bush {
+            constructor(x, y, width) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = 40;
+            }
+
+            draw() {
+                ctx.save();
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(this.x + 2, this.y + this.height - 6, this.width - 4, 8);
+
+                ctx.fillStyle = '#14532d'; 
+                let clusterCount = Math.ceil(this.width / 24);
+                for (let i = 0; i <= clusterCount; i++) {
+                    let cx = this.x + (i * (this.width / clusterCount));
+                    ctx.beginPath();
+                    ctx.arc(cx, this.y + 20, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#166534'; 
+                for (let i = 0; i < clusterCount; i++) {
+                    let cx = this.x + (i * (this.width / clusterCount)) + 10;
+                    ctx.beginPath();
+                    ctx.arc(cx, this.y + 14, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#4ade80';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🍃 HIDE 🍃', this.x + this.width / 2, this.y + 24);
+
+                ctx.restore();
+            }
+        }
+
+        // 足場プラットフォームクラス
+        class Platform {
+            constructor(x, y, width, height, isTreeBranch = false) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.isTreeBranch = isTreeBranch;
+            }
+
+            draw() {
+                ctx.save();
+                
+                if (this.isTreeBranch) {
+                    ctx.fillStyle = '#5c4033'; 
+                    ctx.beginPath();
+                    ctx.roundRect(this.x, this.y, this.width, this.height, 4);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#15803d'; 
+                    ctx.fillRect(this.x, this.y, this.width, 6);
+
+                    ctx.strokeStyle = '#3e2723';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 15, this.y + 12);
+                    ctx.lineTo(this.x + this.width - 15, this.y + 12);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#1e293b'; 
+                    ctx.beginPath();
+                    ctx.roundRect(this.x, this.y, this.width, this.height, 6);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#16a34a'; 
+                    ctx.fillRect(this.x, this.y, this.width, 8);
+
+                    ctx.fillStyle = '#ca8a04'; 
+                    ctx.fillRect(this.x, this.y + 8, this.width, 4);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // エンティティ群
+        let players = [];
+        let enemies = [];
+        let platforms = [];
+        let bushes = [];
+        let items = [];
+        let stillVines = [];
+        let swayingVines = [];
+        let musicNotes = [];
+        let flutePowerups = [];
+
+        let exitPortal = {
+            x: 880,
+            y: 50,
+            width: 50,
+            height: 70,
+            sparkleTime: 0
+        };
+
+        let globalTickCount = 0;
+
+        // 手動でユニークなレベル設定を読み込むジェネレーター
+        function loadLevelLayout(lvl) {
+            bananaCounter = 0;
+            globalTickCount = 0;
+            
+            players = [];
+            enemies = [];
+            platforms = [];
+            bushes = [];
+            items = [];
+            stillVines = [];
+            swayingVines = [];
+            musicNotes = [];
+            flutePowerups = [];
+
+            let speedMod = 0.9 + (lvl * 0.35);
+            if (speedMod > 3.0) speedMod = 3.0;
+
+            players.push(new Player(1, 40, 440, '#78350f', 'P1: Brown', {
+                up: 'KeyW', left: 'KeyA', down: 'KeyS', right: 'KeyD', fire: 'KeyF'
+            }));
+            players.push(new Player(2, 100, 440, '#ea580c', 'P2: Orange', {
+                up: 'KeyI', left: 'KeyJ', down: 'KeyK', right: 'KeyL', fire: 'KeyO'
+            }));
+
+            if (lvl === 1) {
+                // LEVEL 1: Canopy Climb
+                platforms.push(new Platform(0, 500, 450, 40));
+                platforms.push(new Platform(520, 500, 440, 40));
+                
+                platforms.push(new Platform(200, 390, 220, 24, true));
+                platforms.push(new Platform(580, 380, 220, 24, true));
+                platforms.push(new Platform(100, 260, 240, 24, true));
+                platforms.push(new Platform(440, 250, 180, 24, true));
+                platforms.push(new Platform(700, 230, 220, 24, true));
+
+                platforms.push(new Platform(260, 140, 280, 24, true));
+                platforms.push(new Platform(820, 120, 140, 24, true)); 
+
+                exitPortal.x = 860;
+                exitPortal.y = 50;
+
+                stillVines.push(new StillVine(280, 140, 250));
+                stillVines.push(new StillVine(620, 250, 250));
+
+                bushes.push(new Bush(250, 350, 100));
+                bushes.push(new Bush(480, 210, 100));
+
+                flutePowerups.push(new FluteItem(120, 215));
+
+                enemies.push(new Enemy(560, 460, 220, speedMod));
+                enemies.push(new Enemy(450, 210, 120, speedMod + 0.3));
+
+                items.push(new Item(220, 350));
+                items.push(new Item(340, 350));
+                items.push(new Item(620, 340));
+                items.push(new Item(140, 220));
+                items.push(new Item(500, 210));
+                items.push(new Item(300, 100));
+                items.push(new Item(450, 100));
+
+            } else if (lvl === 2) {
+                // LEVEL 2: Swinging Canopy Gaps
+                platforms.push(new Platform(0, 500, 260, 40)); 
+                platforms.push(new Platform(340, 390, 240, 24, true)); 
+                platforms.push(new Platform(680, 390, 280, 40)); 
+                platforms.push(new Platform(120, 260, 200, 24, true)); 
+                platforms.push(new Platform(480, 210, 180, 24, true)); 
+
+                platforms.push(new Platform(800, 150, 160, 24, true)); 
+
+                exitPortal.x = 850;
+                exitPortal.y = 80;
+
+                stillVines.push(new StillVine(160, 260, 240));
+
+                swayingVines.push(new SwayingVine(280, 60, 220)); 
+                swayingVines.push(new SwayingVine(630, 60, 200)); 
+
+                bushes.push(new Bush(380, 350, 90));
+                bushes.push(new Bush(500, 170, 90));
+
+                flutePowerups.push(new FluteItem(220, 215));
+
+                enemies.push(new Enemy(380, 350, 120, speedMod));
+                enemies.push(new Enemy(700, 350, 160, speedMod + 0.2));
+
+                items.push(new Item(60, 460));
+                items.push(new Item(120, 460));
+                items.push(new Item(380, 350));
+                items.push(new Item(500, 350));
+                items.push(new Item(160, 220));
+                items.push(new Item(240, 220));
+                items.push(new Item(540, 170));
+
+            } else {
+                // LEVEL 3: Magical Sanctuary
+                platforms.push(new Platform(0, 500, 300, 40)); 
+                platforms.push(new Platform(660, 500, 300, 40)); 
+
+                platforms.push(new Platform(400, 410, 160, 24, true)); 
+                platforms.push(new Platform(80, 330, 220, 24, true)); 
+                platforms.push(new Platform(700, 320, 200, 24, true)); 
+                platforms.push(new Platform(380, 230, 200, 24, true)); 
+                platforms.push(new Platform(80, 150, 180, 24, true)); 
+
+                platforms.push(new Platform(740, 140, 220, 24, true)); 
+
+                exitPortal.x = 850;
+                exitPortal.y = 70;
+
+                stillVines.push(new StillVine(160, 150, 180));
+                stillVines.push(new StillVine(800, 320, 180));
+
+                swayingVines.push(new SwayingVine(340, 100, 180));
+                swayingVines.push(new SwayingVine(620, 80, 200));
+
+                bushes.push(new Bush(410, 190, 80));
+                bushes.push(new Bush(720, 280, 80));
+
+                flutePowerups.push(new FluteItem(760, 460));
+                flutePowerups.push(new FluteItem(100, 110));
+
+                enemies.push(new Enemy(680, 460, 200, speedMod));
+                enemies.push(new Enemy(90, 290, 160, speedMod + 0.3));
+                enemies.push(new Enemy(390, 190, 140, speedMod + 0.4));
+
+                items.push(new Item(50, 460));
+                items.push(new Item(430, 370));
+                items.push(new Item(500, 370));
+                items.push(new Item(140, 290));
+                items.push(new Item(740, 280));
+                items.push(new Item(420, 190));
+                items.push(new Item(120, 110));
+                items.push(new Item(180, 110));
+            }
+
+            targetBananas = items.length;
+
+            levelDisplay.textContent = currentLevel;
+            updateBananasUI();
+            updateLeopardsUI();
+        }
+
+        function updateBananasUI() {
+            bananasDisplay.textContent = `${bananaCounter}/${targetBananas}`;
+        }
+
+        function updateLeopardsUI() {
+            let awakeLeopards = enemies.filter(e => !e.isSleeping).length;
+            leopardsDisplay.textContent = awakeLeopards;
+        }
+
+        function updatePlayersStatus() {
+            players.forEach((player, idx) => {
+                const statusEl = idx === 0 ? p1Status : p2Status;
+                const activeColor = idx === 0 ? "bg-blue-600" : "bg-orange-600";
+
+                if (player.isDead) {
+                    let secLeft = (player.respawnTimer / 60).toFixed(1);
+                    statusEl.textContent = `Dead 💀 (${secLeft}s)`;
+                    statusEl.className = "px-1.5 py-0.5 rounded text-[10px] bg-red-600 text-white animate-pulse font-bold";
+                } else if (player.isHiding) {
+                    statusEl.textContent = "Hiding 🍃";
+                    statusEl.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-600 text-white font-bold";
+                } else {
+                    statusEl.textContent = "Active";
+                    statusEl.className = `px-1.5 py-0.5 rounded text-[10px] ${activeColor} text-white font-bold`;
+                }
+            });
+        }
+
+        // キーボード操作設定
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            keys[e.code] = false;
+        });
+
+        // モバイルタッチボタンイベントラッパー
+        function setupTouchBtn(btnId, player, direction) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const startPress = (e) => {
+                e.preventDefault();
+                touchControls[player][direction] = true;
+            };
+            const endPress = (e) => {
+                e.preventDefault();
+                touchControls[player][direction] = false;
+            };
+
+            btn.addEventListener('touchstart', startPress);
+            btn.addEventListener('touchend', endPress);
+            btn.addEventListener('mousedown', startPress);
+            btn.addEventListener('mouseup', endPress);
+            btn.addEventListener('mouseleave', endPress);
+        }
+
+        // P1 操作バインド
+        setupTouchBtn('btn-p1-left', 'p1', 'left');
+        setupTouchBtn('btn-p1-right', 'p1', 'right');
+        setupTouchBtn('btn-p1-up', 'p1', 'up');
+        setupTouchBtn('btn-p1-down', 'p1', 'down');
+        setupTouchBtn('btn-p1-fire', 'p1', 'fire');
+
+        // P2 操作バインド
+        setupTouchBtn('btn-p2-left', 'p2', 'left');
+        setupTouchBtn('btn-p2-right', 'p2', 'right');
+        setupTouchBtn('btn-p2-up', 'p2', 'up');
+        setupTouchBtn('btn-p2-down', 'p2', 'down');
+        setupTouchBtn('btn-p2-fire', 'p2', 'fire');
+
+        // BGMミュート/アンミュート切り替え
+        musicToggleBtn.addEventListener('click', () => {
+            isMusicMuted = !isMusicMuted;
+            if (isMusicMuted) {
+                pauseBGM();
+                musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Music: Off';
+                musicToggleBtn.className = "px-2.5 py-1 bg-stone-800 hover:bg-stone-700 rounded text-xs flex items-center gap-1.5 transition active:scale-95 text-stone-400 border border-stone-600/50";
+            } else {
+                playBGM();
+                musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high text-amber-400 animate-pulse"></i> Music: On';
+                musicToggleBtn.className = "px-2.5 py-1 bg-emerald-800 hover:bg-emerald-700 rounded text-xs flex items-center gap-1.5 transition active:scale-95 text-amber-300 border border-emerald-600/50";
+            }
+        });
+
+        // 画面切り替えイベントハンドラー
+        startBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            currentLevel = 1;
+            loadLevelLayout(currentLevel);
+            gameState = 'COUNTDOWN';
+            countdownTimer = 240; 
+            playSound('count');
+            playBGM(); // ご提供のBGMを開始
+        });
+
+        retryBtn.addEventListener('click', () => {
+            gameOverScreen.classList.add('hidden');
+            loadLevelLayout(currentLevel);
+            gameState = 'COUNTDOWN';
+            countdownTimer = 240;
+            playSound('count');
+            playBGM();
+        });
+
+        nextLevelBtn.addEventListener('click', () => {
+            victoryScreen.classList.add('hidden');
+            currentLevel++;
+            loadLevelLayout(currentLevel);
+            gameState = 'COUNTDOWN';
+            countdownTimer = 240;
+            playSound('count');
+            playBGM();
+        });
+
+        // 背景用の蛍/光エフェクトの配列生成
+        let bgStars = [];
+        for (let i = 0; i < 25; i++) {
+            bgStars.push({
+                x: Math.random() * V_WIDTH,
+                y: Math.random() * V_HEIGHT,
+                r: Math.random() * 2 + 1,
+                alpha: Math.random()
+            });
+        }
+
+        function drawBackground() {
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, V_HEIGHT);
+            skyGrad.addColorStop(0, '#06200f'); 
+            skyGrad.addColorStop(1, '#020d04'); 
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+
+            // 蛍のふわふわとしたアニメーション
+            ctx.fillStyle = 'rgba(163, 230, 53, 0.4)';
+            bgStars.forEach(star => {
+                star.alpha += (Math.random() - 0.5) * 0.05;
+                if (star.alpha < 0.1) star.alpha = 0.1;
+                if (star.alpha > 0.8) star.alpha = 0.8;
+                ctx.save();
+                ctx.globalAlpha = star.alpha;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 背景の月
+            ctx.fillStyle = 'rgba(253, 224, 71, 0.04)';
+            ctx.beginPath();
+            ctx.arc(480, 200, 160, 0, Math.PI*2);
+            ctx.fill();
+
+            // シルエット樹木の描画
+            ctx.fillStyle = '#061b0c';
+            ctx.fillRect(0, 0, 60, V_HEIGHT);
+            ctx.beginPath();
+            ctx.arc(60, 200, 140, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillRect(V_WIDTH - 60, 0, 60, V_HEIGHT);
+            ctx.beginPath();
+            ctx.arc(V_WIDTH - 60, 150, 180, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        function drawExitPortal() {
+            exitPortal.sparkleTime += 0.08;
+            ctx.save();
+            
+            let awakeLeopardsCount = enemies.filter(e => !e.isSleeping).length;
+            let isOpen = (bananaCounter >= targetBananas || awakeLeopardsCount === 0);
+
+            let px = exitPortal.x + exitPortal.width / 2;
+            let py = exitPortal.y + exitPortal.height / 2;
+
+            if (isOpen) {
+                let grad = ctx.createRadialGradient(px, py, 2, px, py, 45);
+                grad.addColorStop(0, '#fef08a');
+                grad.addColorStop(0.3, '#facc15');
+                grad.addColorStop(0.7, '#ca8a04');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(px, py, 45, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#fef08a';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(px, py, 30, exitPortal.sparkleTime, exitPortal.sparkleTime + Math.PI, false);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚡ ESCAPE PORTAL ⚡', px, py - 40);
+            } else {
+                let grad = ctx.createRadialGradient(px, py, 2, px, py, 30);
+                grad.addColorStop(0, '#4ade80');
+                grad.addColorStop(0.6, '#15803d');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(px, py, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#a7f3d0';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Need Bananas (${bananaCounter}/${targetBananas})`, px, py - 35);
+            }
+
+            ctx.restore();
+        }
+
+        // メインゲームループ
+        function gameLoop() {
+            if (gameState === 'RUNNING' || gameState === 'COUNTDOWN') {
+                update();
+                render();
+            } else {
+                // START、GAMEOVER、LEVELCLEARステートでも描画のみ行うことで、
+                // 画面が真っ暗のまま停止しているように見えるのを防ぎます
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ゲームの主要アップデート処理
+        function update() {
+            globalTickCount++;
+
+            // スイングツタのスイング進行
+            swayingVines.forEach(vine => vine.update(globalTickCount));
+
+            // スタート前のカウントダウン時アップデート
+            if (gameState === 'COUNTDOWN') {
+                countdownTimer--;
+                
+                if (countdownTimer === 180 || countdownTimer === 120 || countdownTimer === 60) {
+                    playSound('count');
+                }
+
+                if (countdownTimer <= 0) {
+                    gameState = 'RUNNING';
+                }
+
+                players.forEach(p => {
+                    p.vy += p.gravity;
+                    if (p.vy > 12) p.vy = 12;
+                    p.y += p.vy;
+                    p.handleVerticalCollisions(platforms);
+                });
+                enemies.forEach(e => {
+                    e.vy += e.gravity;
+                    if (e.vy > 12) e.vy = 12;
+                    e.y += e.vy;
+                    for (let plat of platforms) {
+                        if (e.x < plat.x + plat.width && e.x + e.width > plat.x && e.y < plat.y + plat.height && e.y + e.height > plat.y) {
+                            if (e.vy > 0) {
+                                e.y = plat.y - e.height;
+                                e.vy = 0;
+                            }
+                        }
+                    }
+                });
+
+                updatePlayersStatus();
+                items.forEach(item => item.update());
+                return;
+            }
+
+            // 通常ゲームプレイのアップデート
+            players.forEach(p => p.update(platforms, bushes, stillVines, swayingVines));
+            
+            updatePlayersStatus();
+
+            enemies.forEach(enemy => enemy.update(players, platforms, bushes));
+
+            // 笛のパワーアップアイテムとの衝突判定
+            flutePowerups.forEach(fl => {
+                if (!fl.collected) {
+                    fl.update();
+                    players.forEach(player => {
+                        if (!player.isDead) {
+                            let dx = (player.x + player.width/2) - (fl.x + 16);
+                            let dy = (player.y + player.height/2) - (fl.y + 16);
+                            let dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < 28) {
+                                fl.collected = true;
+                                player.hasFlute = true;
+                                player.fluteAmmo = 6; 
+                                playSound('collect');
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 音符エフェクトの進行と敵への当たり判定
+            musicNotes.forEach(note => {
+                if (note.active) {
+                    note.update(platforms);
+
+                    enemies.forEach(enemy => {
+                        if (!enemy.isSleeping && note.active) {
+                            if (note.x > enemy.x && note.x < enemy.x + enemy.width &&
+                                note.y > enemy.y && note.y < enemy.y + enemy.height) {
+                                
+                                note.active = false;
+                                enemy.sleepValue++;
+                                enemy.flashTime = 12; 
+                                playSound('lullaby_hit');
+
+                                if (enemy.sleepValue >= enemy.targetSleep) {
+                                    enemy.isSleeping = true;
+                                    updateLeopardsUI();
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            musicNotes = musicNotes.filter(n => n.active);
+
+            // バナナのコレクション判定
+            items.forEach(item => {
+                item.update();
+                
+                if (!item.collected) {
+                    players.forEach(player => {
+                        if (player.isDead) return;
+
+                        if (player.x < item.x + item.width &&
+                            player.x + player.width > item.x &&
+                            player.y < item.y + item.height &&
+                            player.y + player.height > item.y) {
+                            
+                            item.collected = true;
+                            bananaCounter++;
+                            updateBananasUI();
+                            playSound('collect');
+                        }
+                    });
+                }
+            });
+
+            // 目覚めているヒョウとお猿の危険な衝突判定
+            for (let enemy of enemies) {
+                if (enemy.isSleeping) continue;
+
+                for (let player of players) {
+                    if (!player.isHiding && !player.isDead) {
+                        if (player.x + 4 < enemy.x + enemy.width - 4 &&
+                            player.x + player.width - 4 > enemy.x + 4 &&
+                            player.y + 4 < enemy.y + enemy.height - 4 &&
+                            player.y + player.height - 4 > enemy.y + 4) {
+                            
+                            player.isDead = true;
+                            player.respawnTimer = 300; 
+                            playSound('caught');
+
+                            if (players.every(p => p.isDead)) {
+                                triggerGameOver();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // エスケープポータル侵入判定
+            let awakeLeopardsCount = enemies.filter(e => !e.isSleeping).length;
+            let portalIsOpen = (bananaCounter >= targetBananas || awakeLeopardsCount === 0);
+
+            if (portalIsOpen) {
+                let bothInPortal = true;
+                players.forEach(player => {
+                    if (player.isDead) {
+                        bothInPortal = false;
+                        return;
+                    }
+                    let inX = (player.x + player.width/2 > exitPortal.x && player.x + player.width/2 < exitPortal.x + exitPortal.width);
+                    let inY = (player.y + player.height/2 > exitPortal.y && player.y + player.height/2 < exitPortal.y + exitPortal.height);
+                    if (!inX || !inY) {
+                        bothInPortal = false;
+                    }
+                });
+
+                if (bothInPortal) {
+                    triggerVictory(awakeLeopardsCount === 0);
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+
+            drawBackground();
+
+            platforms.forEach(plat => plat.draw());
+
+            stillVines.forEach(vine => vine.draw());
+
+            swayingVines.forEach(vine => vine.draw());
+
+            bushes.forEach(bush => bush.draw());
+
+            drawExitPortal();
+
+            flutePowerups.forEach(fl => fl.draw());
+
+            musicNotes.forEach(note => note.draw());
+
+            items.forEach(item => item.draw());
+
+            enemies.forEach(enemy => enemy.draw());
+
+            players.forEach(player => player.draw());
+
+            // 321カウントダウンオーバーレイの描画
+            if (gameState === 'COUNTDOWN') {
+                ctx.save();
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                let text = "";
+                let color = '#facc15';
+                let pulseProgress = (countdownTimer % 60) / 60;
+                let scale = 1.0 + pulseProgress * 0.4;
+
+                if (countdownTimer > 180) {
+                    text = "3";
+                } else if (countdownTimer > 120) {
+                    text = "2";
+                } else if (countdownTimer > 60) {
+                    text = "1";
+                } else {
+                    text = "GO!";
+                    color = '#22c55e';
+                }
+
+                ctx.translate(V_WIDTH / 2, V_HEIGHT / 2);
+                ctx.scale(scale, scale);
+
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 10;
+                ctx.font = 'black 110px sans-serif';
+                ctx.strokeText(text, 0, 0);
+
+                ctx.fillStyle = color;
+                ctx.fillText(text, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            playSound('lose');
+            pauseBGM();
+            gameOverLevel.textContent = currentLevel;
+            gameOverBananas.textContent = bananaCounter;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function triggerVictory(allLeopardsSleeping) {
+            gameState = 'LEVELCLEAR';
+            playSound('win');
+            pauseBGM();
+            
+            if (allLeopardsSleeping) {
+                victoryFlavor.textContent = "Incredible! Your magical flute melodies soothed all wild jaguars to sleep! The canopy is safe.";
+            } else {
+                victoryFlavor.textContent = "Fantastic co-op teamwork! You gathered all the bananas and scaled safely up into the higher canopy!";
+            }
+            victoryScreen.classList.remove('hidden');
+        }
+
+        // ページロード時の初期レベルセットアップ
+        window.onload = function() {
+            loadLevelLayout(currentLevel);
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
